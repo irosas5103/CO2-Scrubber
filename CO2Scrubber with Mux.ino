@@ -78,6 +78,7 @@ void setup(){
  // Fan control setup.
   pinMode(fan_control, OUTPUT); // PWM pin set to an output.
   analogWrite(fan_control, 0); // Start PWM value to zero.
+  pinMode(5, INPUT_PULLUP); // set internal pullup resistor for tachometer.
   attachInterrupt(digitalPinToInterrupt(5), counter, RISING); // Read the rising tach pulses;
 
  // Init sensor on bus number 2
@@ -101,6 +102,7 @@ void loop(){
   //Print values for the sensors to the display.
   printInput(7);
   printOutput(2);
+  delay(500);
 
   //Set fan speed and send rpm to display.
   if (co21>5000){
