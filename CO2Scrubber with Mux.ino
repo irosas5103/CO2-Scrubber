@@ -24,8 +24,7 @@ int rpm; // variable to store the rpm of the fans.
 // Add variables for the battery charge controller
 float batt; // stores battery voltage
 float batt_low = 12.0; // stores lowest value (starts charge)
-float batt_high = 13.5; // stores highest values (stops charge) 
-float gain = 5.3; // adjusts reading from voltage divider to get actual battery voltage
+float batt_high = 13.5; // stores highest values (stops charge)
 int batt_level; // variable for the display
 
 // Get values from the sensors.  Bus number must be the same as the sensor designated as input or output.
@@ -143,7 +142,7 @@ void loop(){
   Serial1.write(0xff);  
 
   // Battery Charge controller will start on batt_low and cut off at batt_high
-  batt = (analogRead(A6)*(2.759/1023)*gain);
+  batt = (analogRead(A6)*(2.759/1023)*5.3);  // This equation converts the voltage seen by the analog pin to the actual battery voltage.
   batt_level = map(batt,11.8, 13.8, 0, 100); // set the value to 0-100% battery for the display
 
   Serial.print("Battery Voltage: ");
