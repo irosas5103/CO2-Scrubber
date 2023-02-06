@@ -22,10 +22,11 @@ unsigned long s_timer; //timer for obtaining rpm.
 int rpm; // variable to store the rpm of the fans.
 
 // Add variables for the battery charge controller
-float batt; // stores battery voltage
-float batt_low = 12.0; // stores lowest value (starts charge)
-float batt_high = 13.5; // stores highest values (stops charge)
-int batt_level; // variable for the display
+int value = 0;
+float voltage;
+float R1 = 20000.0;
+float R2 = 4700.0;
+int batt_level;
 
 // Get values from the sensors.  Bus number must be the same as the sensor designated as input or output.
 void printInput(int bus) {
@@ -142,23 +143,27 @@ void loop(){
   Serial1.write(0xff);  
 
   // Battery Charge controller will start on batt_low and cut off at batt_high
-  batt = (analogRead(A6)*(2.759/1023)*5.3);  // This equation converts the voltage seen by the analog pin to the actual battery voltage.
-  batt_level = map(batt,11.8, 13.8, 0, 100); // set the value to 0-100% battery for the display
+  value = analogRead(A6);
+  voltage = value * (3.3/1024)*((R1 + R2)/R2); // Get true battery voltage
+  Serial.print("Voltage =");
+  Serial.println(voltage);
+  batt_level = map(voltage,11.8, 13.8, 0, 100); // set the value to 0-100% battery for the display
+  Serial.print("Battery Level = ");
+  Serial.print(batt_level);
+  Serial.println(" %");
 
-  Serial.print("Battery Voltage: ");
-  Serial.println(batt);
   Serial1.print("batt.val=");
   Serial1.print(batt_level);
   Serial1.write(0xff);
   Serial1.write(0xff);
   Serial1.write(0xff); 
 
-  if (batt<batt_low){ 
+  if (voltage<12.0){ 
     digitalWrite(3, HIGH); // battery is below threshold, start charging by turning relay on
     Serial.println("Charging Battery");
   }
 
-  if (batt>batt_high){
+  if (voltage>13.8){
     digitalWrite(3, LOW); // battery is above high limit, stop charging by turning relay off
     Serial.print("Not Charging");
   }
