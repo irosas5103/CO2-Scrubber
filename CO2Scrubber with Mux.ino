@@ -7,7 +7,7 @@ SCD4x Sensor2; // Output sensor
 
 // Code for selecting the I2C bus.
 void TCA9548A(uint8_t bus){
-  Wire.beginTransmission(0x70);  // TCA9548A(mux) address is 0x70
+  Wire.beginTransmission(0x70);  // TCA9548A address is 0x70
   Wire.write(1 << bus);          // send byte to select bus
   Wire.endTransmission();
 }
@@ -20,6 +20,13 @@ int fanc; // Variable to send speed to pwm pin.
 int count=0; // counter for obtaining rpm of the fan.
 unsigned long s_timer; //timer for obtaining rpm.
 int rpm; // variable to store the rpm of the fans.
+
+// Add variables for the battery charge controller
+float batt; // stores battery voltage
+float batt_low = 12.0; // stores lowest value (starts charge)
+float batt_high = 13.5; // stores highest values (stops charge) 
+float gain = 5.3; // adjusts reading from voltage divider to get actual battery voltage
+int batt_level; // variable for the display
 
 // Get values from the sensors.  Bus number must be the same as the sensor designated as input or output.
 void printInput(int bus) {
@@ -81,6 +88,9 @@ void setup(){
   pinMode(5, INPUT_PULLUP); // set internal pullup resistor for tachometer.
   attachInterrupt(digitalPinToInterrupt(5), counter, RISING); // Read the rising tach pulses;
 
+ // Battery charge controller
+  pinMode(3, OUTPUT); // Relay control pin for charging the battery.
+  
  // Init sensor on bus number 2
   TCA9548A(2);
   if (!Sensor2.begin(0x62)) {
@@ -131,6 +141,28 @@ void loop(){
   Serial1.write(0xff);
   Serial1.write(0xff);
   Serial1.write(0xff);  
+
+  // Battery Charge controller will start on batt_low and cut off at batt_high
+  batt = (analogRead(A6)*(2.759/1023)*gain);
+  batt_level = map(batt,11.8, 13.8, 0, 100); // set the value to 0-100% battery for the display
+
+  Serial.print("Battery Voltage: ");
+  Serial.println(batt);
+  Serial1.print("batt.val=");
+  Serial1.print(batt_level);
+  Serial1.write(0xff);
+  Serial1.write(0xff);
+  Serial1.write(0xff); 
+
+  if (batt<batt_low){ 
+    digitalWrite(3, HIGH); // battery is below threshold, start charging by turning relay on
+    Serial.println("Charging Battery");
+  }
+
+  if (batt>batt_high){
+    digitalWrite(3, LOW); // battery is above high limit, stop charging by turning relay off
+    Serial.print("Not Charging");
+  }
 }
 
 void counter(){
