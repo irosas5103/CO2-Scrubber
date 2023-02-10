@@ -22,11 +22,15 @@ unsigned long s_timer; //timer for obtaining rpm.
 int rpm; // variable to store the rpm of the fans.
 
 // Add variables for the battery charge controller
-int value = 0;
-float voltage;
-float R1 = 20000.0;
-float R2 = 4700.0;
-int batt_level;
+const int charge = 3; // Relay control pin for charging
+int value = 0; // Variable for the voltage on pin A6
+float voltage; // Stores actual battery voltage
+float R1 = 20000.0; // Value of voltage divider resistor R1
+float R2 = 4700.0; // Value of voltage divider resistor R2
+int batt_level; // Mapped value for the display
+
+// Add variables for the buzzer alarm.
+const int buzzerPin = 1; // Buzzer pin
 
 // Get values from the sensors.  Bus number must be the same as the sensor designated as input or output.
 void printInput(int bus) {
@@ -58,7 +62,7 @@ void printInput(int bus) {
   Serial1.write(0xff);
   Serial1.write(0xff);
 
-    Serial.println();
+  Serial.println();
 }
 
 void printOutput(int bus){
@@ -89,8 +93,11 @@ void setup(){
   attachInterrupt(digitalPinToInterrupt(5), counter, RISING); // Read the rising tach pulses;
 
  // Battery charge controller
-  pinMode(3, OUTPUT); // Relay control pin for charging the battery.
-  
+  pinMode(charge, OUTPUT); // Relay control pin for charging the battery.
+
+ // Alarm 
+  pinMode(buzzerPin, OUTPUT); // Buzzer output pin
+
  // Init sensor on bus number 2
   TCA9548A(2);
   if (!Sensor2.begin(0x62)) {
@@ -115,8 +122,8 @@ void loop(){
   delay(500);
 
   //Set fan speed and send rpm to display.
-  if (co21>5000){
-    co21=5000; //Set the top end value to 5000 ppm so that the PWM cycle does not reset.
+  if (co21>2500){
+    co21=2500; //Set the top end value to 2500 ppm so that the PWM cycle does not reset.
   }
 
   if (co21<500){
@@ -163,10 +170,15 @@ void loop(){
     Serial.println("Charging Battery");
   }
 
-  if (voltage>13.8){
+  if (voltage>13.5){
     digitalWrite(3, LOW); // battery is above high limit, stop charging by turning relay off
     Serial.print("Not Charging");
   }
+
+  // Set alarm for a CO2 of over 2500 ppm
+  //if (co21 or co22 >= 2000){
+  //digitalWrite(buzzerPin, HIGH);
+  //}
 }
 
 void counter(){
